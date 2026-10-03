@@ -1,0 +1,19 @@
+name: Aula Project Bridge
+version: "0.1.0"
+slug: aula_project_bridge
+description: Restricted file API for the local Aula assistant project
+url: https://github.com/bncbnc83/aula-project-bridge
+arch:
+  - amd64
+init: false
+startup: services
+ingress: true
+ingress_port: 8099
+panel_admin: true
+panel_icon: mdi:shield-folder
+map:
+  - type: local_apps
+    read_only: false
+    path: /local_apps
+options: {}
+schema: {}
