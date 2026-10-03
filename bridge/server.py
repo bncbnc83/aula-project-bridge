@@ -18,7 +18,7 @@ from urllib.parse import parse_qs, urlsplit
 
 HOST = "0.0.0.0"
 PORT = 8099
-ROOT = Path("/local_apps/aula_assistant")
+ROOT = Path("/share/aula_assistant")
 MAX_BODY = 16 * 1024 * 1024
 MAX_READ = 16 * 1024 * 1024
 MAX_LIST = 5000
