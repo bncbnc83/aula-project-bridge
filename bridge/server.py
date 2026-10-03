@@ -10,6 +10,7 @@ import os
 import shutil
 import stat
 import tempfile
+import time
 from http import HTTPStatus
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
@@ -151,6 +152,28 @@ class Handler(BaseHTTPRequestHandler):
             if self.command == "GET" and route == "/health":
                 root = _root()
                 self._ok({"ok": True, "root": str(root), "project": "aula_assistant", "version": "0.1.0"})
+                return
+
+            if self.command == "GET" and route == "/probe":
+                root = _root()
+                path = _jailed(".aula-bridge-persistence-probe", allow_root=False)
+                before = root.stat().st_mtime_ns
+                path.write_text("probe\\n", encoding="utf-8")
+                immediate = path.exists()
+                after_write = root.stat().st_mtime_ns
+                time.sleep(2)
+                after_2s = path.exists()
+                after_wait = root.stat().st_mtime_ns
+                if path.exists():
+                    path.unlink()
+                self._ok({
+                    "ok": True,
+                    "immediate": immediate,
+                    "after_2s": after_2s,
+                    "root_mtime_before": before,
+                    "root_mtime_after_write": after_write,
+                    "root_mtime_after_wait": after_wait,
+                })
                 return
 
             if self.command == "GET" and route == "/stat":
