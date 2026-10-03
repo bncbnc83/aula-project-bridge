@@ -157,22 +157,47 @@ class Handler(BaseHTTPRequestHandler):
             if self.command == "GET" and route == "/probe":
                 root = _root()
                 path = _jailed(".aula-bridge-persistence-probe", allow_root=False)
-                before = root.stat().st_mtime_ns
+                st_before = root.stat()
                 path.write_text("probe\\n", encoding="utf-8")
-                immediate = path.exists()
-                after_write = root.stat().st_mtime_ns
-                time.sleep(2)
-                after_2s = path.exists()
-                after_wait = root.stat().st_mtime_ns
+                st_after_write = root.stat()
+                timeline = []
+                for i in range(1, 31):
+                    time.sleep(0.1)
+                    exists = path.exists()
+                    current_root = ROOT.resolve(strict=True)
+                    st = current_root.stat()
+                    timeline.append({
+                        "t_ms": i * 100,
+                        "exists": exists,
+                        "root_inode": st.st_ino,
+                        "root_mtime_ns": st.st_mtime_ns,
+                    })
+                    if not exists:
+                        break
+                st_end = ROOT.resolve(strict=True).stat()
                 if path.exists():
                     path.unlink()
+                mount_line = None
+                try:
+                    for line in Path("/proc/self/mountinfo").read_text().splitlines():
+                        if " /local_apps " in line or " /local_apps/aula_assistant " in line:
+                            mount_line = line
+                            break
+                except OSError:
+                    pass
                 self._ok({
                     "ok": True,
-                    "immediate": immediate,
-                    "after_2s": after_2s,
-                    "root_mtime_before": before,
-                    "root_mtime_after_write": after_write,
-                    "root_mtime_after_wait": after_wait,
+                    "root_dev_before": st_before.st_dev,
+                    "root_inode_before": st_before.st_ino,
+                    "root_mtime_before": st_before.st_mtime_ns,
+                    "root_dev_after_write": st_after_write.st_dev,
+                    "root_inode_after_write": st_after_write.st_ino,
+                    "root_mtime_after_write": st_after_write.st_mtime_ns,
+                    "root_dev_end": st_end.st_dev,
+                    "root_inode_end": st_end.st_ino,
+                    "root_mtime_end": st_end.st_mtime_ns,
+                    "timeline": timeline,
+                    "mountinfo": mount_line,
                 })
                 return
 
